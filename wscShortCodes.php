@@ -1,6 +1,6 @@
 <?php
 
-function userDetailsShortCode($atts) {
+function userDetailsShortCode() {
     $wscClass = new \WscStravaApi\StravaConnectApi();
     $userDetails = $wscClass->getUserDetails();
     //print_r($userDetails);
