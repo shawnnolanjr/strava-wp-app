@@ -14,6 +14,7 @@ Author URI: http://wellrootedmedia.com
 include(plugin_dir_path(__FILE__) . 'ApiSetup.php');
 include(plugin_dir_path(__FILE__) . 'StravaApi.php');
 include(plugin_dir_path(__FILE__) . 'wscShortCodes.php');
+include(plugin_dir_path(__FILE__) . 'wscWidget.php');
 
 /*
  * Register activation hooks
