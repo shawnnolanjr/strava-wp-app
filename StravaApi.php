@@ -23,7 +23,7 @@ class StravaConnectApi
 
     private function oauthResponse()
     {
-        $authTokenRespoinse = wp_remote_post(
+        $authTokenResponse = wp_remote_post(
             $this->authTokenUrl,
             array(
                 'method' => 'POST',
@@ -41,13 +41,13 @@ class StravaConnectApi
             )
         );
 
-        if (is_wp_error($authTokenRespoinse)) {
-            $error_message = $authTokenRespoinse->get_error_message();
+        if (is_wp_error($authTokenResponse)) {
+            $error_message = $authTokenResponse->get_error_message();
             echo "Something went wrong: $error_message";
 
             return false;
         } else {
-            $responseBody = json_decode($authTokenRespoinse['body']);
+            $responseBody = json_decode($authTokenResponse['body']);
 
             return $responseBody;
         }
