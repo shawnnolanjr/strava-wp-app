@@ -57,7 +57,7 @@ class StravaConnectApi
     {
         $args = array(
             'headers' => array(),
-            'body' => array('access_token' => '47353b9097ca5d9c93c5a988070804c21e97088c'),
+            'body' => array('access_token' => $this->clientAccessToken),
         );
         $response = wp_remote_get($url, $args);
         $jsonDecode2 = json_decode($response['body']);
@@ -67,19 +67,22 @@ class StravaConnectApi
 
     public function getUserActivityStream()
     {
-        $response = null;
+        if ($this->isAuthenticated()) {
 
-        if (!$_SESSION['wscOAuthResponse']) {
-            $response = $this->oauthResponse();
-            $_SESSION['wscOAuthResponse'] = $response;
-        } else {
-            $response = $_SESSION['wscOAuthResponse'];
-        }
+            $response = null;
 
-        if ($response) {
-            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $response->athlete->id);
+            if (!$_SESSION['wscOAuthResponse']) {
+                $response = $this->oauthResponse();
+                $_SESSION['wscOAuthResponse'] = $response;
+            } else {
+                $response = $_SESSION['wscOAuthResponse'];
+            }
 
-            return $activityStream[0];
+            if ($response) {
+                $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $response->athlete->id);
+
+                return $activityStream[0];
+            }
         }
 
         return false;
@@ -88,6 +91,7 @@ class StravaConnectApi
     public function getUserDetails()
     {
         if ($this->isAuthenticated()) {
+
             $response = null;
 
             if (!$_SESSION['wscOAuthResponse']) {
@@ -109,8 +113,6 @@ class StravaConnectApi
 
                 return $activityStream;
             }
-        } else {
-            $this->stravaApiLoginButton();
         }
 
         return false;
@@ -119,6 +121,7 @@ class StravaConnectApi
     public function isAuthenticated()
     {
         if (!isset($_SESSION['wscOAuthResponse']->access_token)) {
+            $this->stravaApiLoginButton();
             return false;
         } else {
             return true;
