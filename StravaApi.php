@@ -1,5 +1,7 @@
 <?php
 
+namespace WscStravaApi;
+
 class StravaConnectApi
 {
     const BASE_URL = 'https://www.strava.com';

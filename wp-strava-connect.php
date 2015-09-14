@@ -13,6 +13,7 @@ Author URI: http://wellrootedmedia.com
  */
 include(plugin_dir_path(__FILE__) . 'ApiSetup.php');
 include(plugin_dir_path(__FILE__) . 'StravaApi.php');
+include(plugin_dir_path(__FILE__) . 'wscShortCodes.php');
 
 /*
  * Register activation hooks
@@ -42,21 +43,7 @@ function wsc_uninstall()
     // do something
 }
 
-function userDetailsShortcode($atts) {
-    $wscClass = new StravaConnectApi();
-    $userDetails = $wscClass->getUserDetails();
-    //print_r($userDetails);
-    if($userDetails) {
-        echo $userDetails->firstname . ', ' . $userDetails->lastname;
-    }
-}
-add_shortcode('wscUserDetails', 'userDetailsShortcode');
 
-function foobar_func($atts)
-{
-    return "foo and bar";
-}
-add_shortcode('foobar', 'foobar_func');
 
 //add_action('admin_menu', 'register_strava_connect_menu_page');
 //function register_strava_connect_menu_page()
