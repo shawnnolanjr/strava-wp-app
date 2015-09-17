@@ -25,8 +25,68 @@ class StravaConnectApi
 
     private function oauthResponse()
     {
+        if (!isset($_SESSION['wscOAuthResponse']) && $_GET['code'] && $_GET['state']) {
+            $authTokenResponse = wp_remote_post(
+                $this->authTokenUrl,
+                array(
+                    'method' => 'POST',
+                    'timeout' => 45,
+                    'redirection' => 5,
+                    'httpversion' => '1.0',
+                    'blocking' => true,
+                    'headers' => array(),
+                    'body' => array(
+                        'client_id' => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'code' => $_GET['code']
+                    ),
+                    'cookies' => array()
+                )
+            );
+
+            if (is_wp_error($authTokenResponse)) {
+                $error_message = $authTokenResponse->get_error_message();
+                echo "Something went wrong: $error_message";
+
+                return false;
+            } else {
+                $responseBody = json_decode($authTokenResponse['body']);
+                $_SESSION['wscOAuthResponse'] = $responseBody;
+                return $responseBody;
+            }
+        } else {
+            return $_SESSION['wscOAuthResponse'];
+        }
+    }
+
+
+    private function getApiResponse($url)
+    {
+        $args = array(
+            'headers' => array(),
+            'body' => array('access_token' => $this->clientAccessToken),
+        );
+        $response = wp_remote_get($url, $args);
+        $jsonDecode2 = json_decode($response['body']);
+
+        return $jsonDecode2;
+    }
+
+    public function getUserActivityStream()
+    {
+        if ($this->isAuthenticated()) {
+            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $_SESSION['wscOAuthResponse']->athlete->id);
+
+            return $activityStream[0];
+        }
+
+        return false;
+    }
+
+    private function tokenExchange()
+    {
         $authTokenResponse = wp_remote_post(
-            $this->authTokenUrl,
+            'https://www.strava.com/oauth/token',
             array(
                 'method' => 'POST',
                 'timeout' => 45,
@@ -37,7 +97,7 @@ class StravaConnectApi
                 'body' => array(
                     'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
-                    'code' => $_GET['code']
+                    'code' => $_SESSION['wscOAuthResponse']->access_token
                 ),
                 'cookies' => array()
             )
@@ -55,66 +115,18 @@ class StravaConnectApi
         }
     }
 
-    private function getApiResponse($url)
-    {
-        $args = array(
-            'headers' => array(),
-            'body' => array('access_token' => $this->clientAccessToken),
-        );
-        $response = wp_remote_get($url, $args);
-        $jsonDecode2 = json_decode($response['body']);
-
-        return $jsonDecode2;
-    }
-
-    public function getUserActivityStream()
-    {
-        if ($this->isAuthenticated()) {
-
-            $response = null;
-
-            if (!$_SESSION['wscOAuthResponse']) {
-                $response = $this->oauthResponse();
-                $_SESSION['wscOAuthResponse'] = $response;
-            } else {
-                $response = $_SESSION['wscOAuthResponse'];
-            }
-
-            if ($response) {
-                $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $response->athlete->id);
-
-                return $activityStream[0];
-            }
-        }
-
-        return false;
-    }
-
     public function getUserDetails()
     {
         if ($this->isAuthenticated()) {
 
-            $response = null;
-
-            if (!$_SESSION['wscOAuthResponse']) {
-                $response = $this->oauthResponse();
-                $_SESSION['wscOAuthResponse'] = $response;
+            if (!$_SESSION['wscUserDetails']) {
+                $activityStream = $this->getApiResponse($this->apiUrl . '/athlete');
+                $_SESSION['wscUserDetails'] = $activityStream;
             } else {
-                $response = $_SESSION['wscOAuthResponse'];
+                $activityStream = $_SESSION['wscUserDetails'];
             }
 
-            if ($response) {
-                $activityStream = null;
-
-                if (!$_SESSION['wscUserDetails']) {
-                    $activityStream = $this->getApiResponse($this->apiUrl . '/athlete');
-                    $_SESSION['wscUserDetails'] = $activityStream;
-                } else {
-                    $activityStream = $_SESSION['wscUserDetails'];
-                }
-
-                return $activityStream;
-            }
+            return $activityStream;
         }
 
         return false;
@@ -122,20 +134,25 @@ class StravaConnectApi
 
     public function isAuthenticated()
     {
-        if (!isset($_SESSION['wscOAuthResponse']->access_token)) {
-            $this->stravaApiLoginButton();
-            return false;
-        } else {
+        $this->oauthResponse();
+
+        if (isset($_SESSION['wscOAuthResponse']) && $_SESSION['wscOAuthResponse']->message != 'Bad Request') {
             return true;
+        } else {
+            $this->stravaApiLoginButton();
+
+            return false;
         }
     }
 
     public function stravaApiLoginButton()
     {
+        $actual_link = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}";
+
         $loginHref = 'https://www.strava.com/oauth/authorize?' .
             'client_id=8004&' .
             'response_type=code' .
-            '&redirect_uri=' . $_SERVER['HTTP_REFERER'] .
+            '&redirect_uri=' . $actual_link .
             '&scope=write&' .
             'state=loggedInWithWSC&' .
             'approval_prompt=force';
