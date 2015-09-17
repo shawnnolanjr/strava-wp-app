@@ -79,7 +79,12 @@ class StravaConnectApi
     public function getUserActivityStream()
     {
         if ($this->isAuthenticated()) {
-            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $_SESSION['wscOAuthResponse']->athlete->id);
+            if (!$_SESSION['wscUserActivities']) {
+                $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $_SESSION['wscOAuthResponse']->athlete->id);
+                $_SESSION['wscUserActivities'] = $activityStream;
+            } else {
+                $activityStream = $_SESSION['wscUserActivities'];
+            }
 
             return $activityStream[0];
         }
@@ -87,50 +92,18 @@ class StravaConnectApi
         return false;
     }
 
-    private function tokenExchange()
-    {
-        $authTokenResponse = wp_remote_post(
-            'https://www.strava.com/oauth/token',
-            array(
-                'method' => 'POST',
-                'timeout' => 45,
-                'redirection' => 5,
-                'httpversion' => '1.0',
-                'blocking' => true,
-                'headers' => array(),
-                'body' => array(
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'code' => $_SESSION['wscOAuthResponse']->access_token
-                ),
-                'cookies' => array()
-            )
-        );
-
-        if (is_wp_error($authTokenResponse)) {
-            $error_message = $authTokenResponse->get_error_message();
-            echo "Something went wrong: $error_message";
-
-            return false;
-        } else {
-            $responseBody = json_decode($authTokenResponse['body']);
-
-            return $responseBody;
-        }
-    }
-
     public function getUserDetails()
     {
         if ($this->isAuthenticated()) {
 
             if (!$_SESSION['wscUserDetails']) {
-                $activityStream = $this->getApiResponse($this->apiUrl . '/athlete');
-                $_SESSION['wscUserDetails'] = $activityStream;
+                $userDetails = $this->getApiResponse($this->apiUrl . '/athlete');
+                $_SESSION['wscUserDetails'] = $userDetails;
             } else {
-                $activityStream = $_SESSION['wscUserDetails'];
+                $userDetails = $_SESSION['wscUserDetails'];
             }
 
-            return $activityStream;
+            return $userDetails;
         }
 
         return false;
