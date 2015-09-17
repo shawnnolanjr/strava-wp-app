@@ -28,11 +28,11 @@ class WSC_Widget_Class extends \WP_Widget {
         $loggedInitle = ! empty( $instance['loggedInTitle'] ) ? $instance['loggedInTitle'] : __( 'Logged in text', 'text_domain' );
         ?>
         <p>
-            <label for="<?php echo $this->get_field_id( 'loggedOutTitle' ); ?>"><?php _e( 'Title:' ); ?></label>
+            <label for="<?php echo $this->get_field_id( 'loggedOutTitle' ); ?>"><?php _e( 'Logged out title:' ); ?></label>
             <input class="widefat" id="<?php echo $this->get_field_id( 'loggedOutTitle' ); ?>" name="<?php echo $this->get_field_name( 'loggedOutTitle' ); ?>" type="text" value="<?php echo esc_attr( $loggedOutTitle ); ?>">
         </p>
         <p>
-            <label for="<?php echo $this->get_field_id( 'loggedInTitle' ); ?>"><?php _e( 'Title:' ); ?></label>
+            <label for="<?php echo $this->get_field_id( 'loggedInTitle' ); ?>"><?php _e( 'Logged in title:' ); ?></label>
             <input class="widefat" id="<?php echo $this->get_field_id( 'loggedInTitle' ); ?>" name="<?php echo $this->get_field_name( 'loggedInTitle' ); ?>" type="text" value="<?php echo esc_attr( $loggedInitle ); ?>">
         </p>
     <?php
