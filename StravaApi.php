@@ -25,7 +25,7 @@ class StravaConnectApi
 
     private function oauthResponse()
     {
-        if (!isset($_SESSION['wscOAuthResponse']) && $_GET['code'] && $_GET['state']) {
+        if (isset($_GET['code']) && isset($_GET['state'])) {
             $authTokenResponse = wp_remote_post(
                 $this->authTokenUrl,
                 array(
@@ -62,14 +62,18 @@ class StravaConnectApi
 
     private function getApiResponse($url)
     {
-        $args = array(
-            'headers' => array(),
-            'body' => array('access_token' => $this->clientAccessToken),
-        );
-        $response = wp_remote_get($url, $args);
-        $jsonDecode2 = json_decode($response['body']);
+        if($_SESSION['wscOAuthResponse']->access_token) {
+            $args = array(
+                'headers' => array(),
+                'body' => array('access_token' => $_SESSION['wscOAuthResponse']->access_token),
+            );
+            $response = wp_remote_get($url, $args);
+            $jsonDecode2 = json_decode($response['body']);
 
-        return $jsonDecode2;
+            return $jsonDecode2;
+        }
+
+        return false;
     }
 
     public function getUserActivityStream()
