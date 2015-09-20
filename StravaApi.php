@@ -2,7 +2,7 @@
 
 namespace WscStravaApi;
 
-class StravaConnectApi
+class StravaOAuth
 {
     const BASE_URL = 'https://www.strava.com';
 
@@ -23,7 +23,7 @@ class StravaConnectApi
         $this->authTokenUrl = self::BASE_URL . '/oauth/token';
     }
 
-    private function oauthResponse()
+    protected function oauthResponse()
     {
         if (isset($_GET['code']) && isset($_GET['state'])) {
             $authTokenResponse = wp_remote_post(
@@ -60,14 +60,18 @@ class StravaConnectApi
     }
 
 
-    private function getApiResponse($url)
+    protected function getApiResponse($url, $userId)
     {
-        if($_SESSION['wscOAuthResponse']->access_token) {
-            $args = array(
-                'headers' => array(),
-                'body' => array('access_token' => $_SESSION['wscOAuthResponse']->access_token),
+        if ($_SESSION['wscOAuthResponse']->access_token) {
+            $theArgs = array(
+                'body' => array(
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'access_token' => $_SESSION['wscOAuthResponse']->access_token,
+                    'id' => $userId
+                )
             );
-            $response = wp_remote_get($url, $args);
+            $response = wp_remote_get($url, $theArgs);
             $jsonDecode2 = json_decode($response['body']);
 
             return $jsonDecode2;
@@ -76,20 +80,41 @@ class StravaConnectApi
         return false;
     }
 
+    protected function isAuthenticated()
+    {
+        $this->oauthResponse();
+
+        if (isset($_SESSION['wscOAuthResponse']) && $_SESSION['wscOAuthResponse']->message != 'Bad Request') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+}
+
+class StravaUser extends StravaOAuth
+{
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
     public function getUserActivityStream()
     {
         if ($this->isAuthenticated()) {
             if (!$_SESSION['wscUserActivities']) {
-                $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $_SESSION['wscOAuthResponse']->athlete->id);
+                $activityStream = $this->getApiResponse($this->apiUrl . '/activities', $_SESSION['wscOAuthResponse']->athlete->id);
                 $_SESSION['wscUserActivities'] = $activityStream;
             } else {
                 $activityStream = $_SESSION['wscUserActivities'];
             }
 
-            return $activityStream[0];
-        }
+            return $activityStream;
+        } else {
+            $this->stravaConnectLogin();
 
-        return false;
+            return false;
+        }
     }
 
     public function getUserDetails()
@@ -97,32 +122,21 @@ class StravaConnectApi
         if ($this->isAuthenticated()) {
 
             if (!$_SESSION['wscUserDetails']) {
-                $userDetails = $this->getApiResponse($this->apiUrl . '/athlete');
+                $userDetails = $this->getApiResponse($this->apiUrl . '/athlete', $_SESSION['wscOAuthResponse']->athlete->id);
                 $_SESSION['wscUserDetails'] = $userDetails;
             } else {
                 $userDetails = $_SESSION['wscUserDetails'];
             }
 
             return $userDetails;
-        }
-
-        return false;
-    }
-
-    public function isAuthenticated()
-    {
-        $this->oauthResponse();
-
-        if (isset($_SESSION['wscOAuthResponse']) && $_SESSION['wscOAuthResponse']->message != 'Bad Request') {
-            return true;
         } else {
-            $this->stravaApiLoginButton();
+            $this->stravaConnectLogin();
 
             return false;
         }
     }
 
-    public function stravaApiLoginButton()
+    public function stravaConnectLogin()
     {
         $actual_link = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}";
 
@@ -139,6 +153,13 @@ class StravaConnectApi
         <a href="<?php echo $loginHref; ?>">
             <img src="<?php echo plugins_url('/images/LogInWithStrava.png', __FILE__); ?>"/>
         </a>
+    <?php
+    }
+
+    public static function stravaConnectLogout()
+    {
+        ?>
+        <a href="https://www.strava.com/oauth/deauthorize">Log out</a>
     <?php
     }
 }

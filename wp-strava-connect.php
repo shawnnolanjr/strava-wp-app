@@ -15,6 +15,20 @@ include(plugin_dir_path(__FILE__) . 'ApiSetup.php');
 include(plugin_dir_path(__FILE__) . 'StravaApi.php');
 include(plugin_dir_path(__FILE__) . 'wscShortCodes.php');
 include(plugin_dir_path(__FILE__) . 'wscWidget.php');
+add_action('wp_enqueue_scripts', 'wscEnqueueStyleScripts');
+function wscEnqueueStyleScripts()
+{
+    /*
+     * styles
+     */
+//    wp_enqueue_style('bootstrap-min-style', get_template_directory_uri() . '/dist/css/bootstrap.min.css');
+
+    /*
+     * scripts
+     */
+    wp_enqueue_script( 'jquery-connect', plugins_url( 'js/jquery.connect.js' , __FILE__ ), array('jquery'), '0.0.1', true);
+//    wp_enqueue_script('jquery-connect', plugin_dir_path(__FILE__) . 'js/jquery.connect.js', array('jquery'), '0.0.1', true);
+}
 
 /*
  * Register activation hooks
