@@ -1,5 +1,6 @@
 <?php
 
+
 function userDetailsShortCode()
 {
     $wscClass = new \WscStravaApi\StravaUser();
@@ -16,23 +17,27 @@ function userActivitiesShortCode()
     $wscClass = new \WscStravaApi\StravaUser();
     $userActivities = $wscClass->getUserActivityStream();
     if ($userActivities) {
-        $rideId = $_GET['rideId'];
-        if ($rideId) {
-            $userActivity = $wscClass->getUserActivity($rideId);
-            ?>
-            <div class="container">
-                <div class="row">
-                    <div class="col-lg-10">
-                        <ul>
-                            <li><?php echo $userActivity->name; ?></li>
+        $isRideId = isset($_GET['rideId']);
+        if ($isRideId) {
+            $rideId = $_GET['rideId'];
+            $rideIdInt = is_numeric($rideId);
+            if ($rideIdInt) {
+                $userActivity = $wscClass->getUserActivity($rideId);
+                ?>
+                <div class="container">
+                    <div class="row">
+                        <div class="col-lg-10">
                             <ul>
-                                <ol><?php echo $userActivity->distance; ?></ol>
+                                <li><?php echo $userActivity->name; ?></li>
+                                <ul>
+                                    <ol><?php echo $userActivity->distance; ?></ol>
+                                </ul>
                             </ul>
-                        </ul>
+                        </div>
                     </div>
                 </div>
-            </div>
-        <?php
+            <?php
+            }
         } else {
             ?>
             <div class="container">

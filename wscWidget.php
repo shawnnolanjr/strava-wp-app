@@ -15,9 +15,9 @@ class WSC_Widget_Class extends \WP_Widget {
         if($_SESSION['wscOAuthResponse']->access_token) {
             if ( ! empty( $instance['loggedInTitle'] ) ) {
                 echo $args['before_title'] . apply_filters( 'widget_title', $instance['loggedInTitle'] ). $args['after_title'];
-                echo '<br/>';
-                $stravaClass = new StravaUser();
-                $stravaClass->stravaConnectLogout();
+//                echo '<br/>';
+//                $stravaClass = new StravaUser();
+//                $stravaClass->stravaConnectLogout();
             }
         } else {
             if ( ! empty( $instance['loggedOutTitle'] ) ) {
