@@ -60,7 +60,7 @@ class StravaOAuth
     }
 
 
-    protected function getApiResponse($url, $userId)
+    protected function getApiResponse($url, $userId = null)
     {
         if ($_SESSION['wscOAuthResponse']->access_token) {
             $theArgs = array(
@@ -68,7 +68,8 @@ class StravaOAuth
                     'client_id' => $this->clientId,
                     'client_secret' => $this->clientSecret,
                     'access_token' => $_SESSION['wscOAuthResponse']->access_token,
-                    'id' => $userId
+                    'id' => ($userId) ? $userId : null,
+                    'per_page' => 20
                 )
             );
             $response = wp_remote_get($url, $theArgs);
@@ -90,6 +91,16 @@ class StravaOAuth
             return false;
         }
     }
+
+    /*
+     * Todo: use this for later when we want to pass more arguments to "getApiResponse"
+
+    protected function apiRequestParameters($paramValues)
+    {
+        $asdf = $paramValues;
+        return $asdf;
+    }
+    */
 }
 
 class StravaUser extends StravaOAuth
@@ -97,6 +108,19 @@ class StravaUser extends StravaOAuth
     public function __construct()
     {
         parent::__construct();
+    }
+
+    public function getUserActivity($rideId)
+    {
+        if ($this->isAuthenticated()) {
+            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/'.$rideId);
+
+            return $activityStream;
+        } else {
+            $this->stravaConnectLogin();
+
+            return false;
+        }
     }
 
     public function getUserActivityStream()
@@ -156,7 +180,7 @@ class StravaUser extends StravaOAuth
     <?php
     }
 
-    public static function stravaConnectLogout()
+    public function stravaConnectLogout()
     {
         ?>
         <a href="https://www.strava.com/oauth/deauthorize">Log out</a>

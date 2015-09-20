@@ -17,7 +17,7 @@ class WSC_Widget_Class extends \WP_Widget {
                 echo $args['before_title'] . apply_filters( 'widget_title', $instance['loggedInTitle'] ). $args['after_title'];
                 echo '<br/>';
                 $stravaClass = new StravaUser();
-                $stravaClass::stravaConnectLogout();
+                $stravaClass->stravaConnectLogout();
             }
         } else {
             if ( ! empty( $instance['loggedOutTitle'] ) ) {
