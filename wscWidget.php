@@ -12,7 +12,12 @@ class WSC_Widget_Class extends \WP_Widget {
     public function widget( $args, $instance ) {
         echo $args['before_widget'];
 
-        if($_SESSION['wscOAuthResponse']->access_token) {
+        if($_SESSION['wscUserDetails']) {
+            $wscClass = new \WscStravaApi\StravaUser();
+            $wscClass->getUserDetails();
+        }
+
+        if($_SESSION['wscUserDetails']) {
             if ( ! empty( $instance['loggedInTitle'] ) ) {
                 echo $args['before_title'] . apply_filters( 'widget_title', $instance['loggedInTitle'] ). $args['after_title'];
             }

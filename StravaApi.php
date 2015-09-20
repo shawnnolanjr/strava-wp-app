@@ -165,10 +165,10 @@ class StravaUser extends StravaOAuth
         $actual_link = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}";
 
         $loginHref = 'https://www.strava.com/oauth/authorize?' .
-            'client_id=8004&' .
-            'response_type=code' .
-            '&redirect_uri=' . $actual_link .
-            '&scope=write&' .
+            'client_id='.$this->clientId.'&' .
+            'response_type=code&'.
+            'redirect_uri=' . $actual_link .'&'.
+            'scope=write&' .
             'state=loggedInWithWSC&' .
             'approval_prompt=force';
         ?>

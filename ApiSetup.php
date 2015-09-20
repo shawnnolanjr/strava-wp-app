@@ -16,7 +16,8 @@ function wsc_theme_customizer($wp_customize)
     $wp_customize->add_setting('wsc_api_client_id');
     $wp_customize->add_setting('wsc_api_access_token');
     $wp_customize->add_setting('wsc_api_client_secret');
-    $wp_customize->add_setting('wsc_api_client_dropdown]');
+    $wp_customize->add_setting('wsc_api_user_details');
+    $wp_customize->add_setting('wsc_api_user_activities');
 
     /*
      * wp customize controls for settings
@@ -36,11 +37,17 @@ function wsc_theme_customizer($wp_customize)
         'section' => 'wsc_api_section',
         'settings' => 'wsc_api_client_secret'
     ));
-    $wp_customize->add_control('wsc_api_client_dropdown', array(
-        'label' => __('Select Default Activities page.'),
+    $wp_customize->add_control('wsc_api_user_details', array(
+        'label' => __('Select page to display user details on.'),
         'section' => 'wsc_api_section',
         'type' => 'dropdown-pages',
-        'settings' => 'wsc_api_client_dropdown',
+        'settings' => 'wsc_api_user_details',
+    ));
+    $wp_customize->add_control('wsc_api_user_activities', array(
+        'label' => __('Select page to display user activities on.'),
+        'section' => 'wsc_api_section',
+        'type' => 'dropdown-pages',
+        'settings' => 'wsc_api_user_activities',
     ));
 }
 

@@ -39,6 +39,9 @@ function userActivitiesShortCode()
             <?php
             }
         } else {
+            //wsc_api_activities_dropdown
+            $activitiesId = get_theme_mod('wsc_api_user_activities');
+            $activityLink = get_permalink( $activitiesId );
             ?>
             <div class="container">
                 <div class="row">
@@ -47,7 +50,7 @@ function userActivitiesShortCode()
                         foreach ($userActivities as $activity) {
                             ?>
                             <ul>
-                                <li><?php echo $activity->name; ?></li>
+                                <li><a href="<?php echo $activityLink; ?>?rideId=<?php echo $activity->id; ?>"><?php echo $activity->name; ?></a></li>
                                 <ul>
                                     <ol><?php echo $activity->distance; ?></ol>
                                 </ul>
