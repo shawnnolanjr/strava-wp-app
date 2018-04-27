@@ -1,6 +1,8 @@
 <?php
 
-class StravaConnectApi
+namespace WscStravaApi;
+
+class StravaOAuth
 {
     const BASE_URL = 'https://www.strava.com';
 
@@ -21,117 +23,152 @@ class StravaConnectApi
         $this->authTokenUrl = self::BASE_URL . '/oauth/token';
     }
 
-    private function oauthResponse()
+    protected function oauthResponse()
     {
-        $authTokenRespoinse = wp_remote_post(
-            $this->authTokenUrl,
-            array(
-                'method' => 'POST',
-                'timeout' => 45,
-                'redirection' => 5,
-                'httpversion' => '1.0',
-                'blocking' => true,
-                'headers' => array(),
-                'body' => array(
-                    'client_id' => $this->clientId,
-                    'client_secret' => $this->clientSecret,
-                    'code' => $_GET['code']
-                ),
-                'cookies' => array()
-            )
-        );
+        if (isset($_GET['code']) && isset($_GET['state'])) {
+            $authTokenResponse = wp_remote_post(
+                $this->authTokenUrl,
+                array(
+                    'method' => 'POST',
+                    'timeout' => 45,
+                    'redirection' => 5,
+                    'httpversion' => '1.0',
+                    'blocking' => true,
+                    'headers' => array(),
+                    'body' => array(
+                        'client_id' => $this->clientId,
+                        'client_secret' => $this->clientSecret,
+                        'code' => $_GET['code']
+                    ),
+                    'cookies' => array()
+                )
+            );
 
-        if (is_wp_error($authTokenRespoinse)) {
-            $error_message = $authTokenRespoinse->get_error_message();
-            echo "Something went wrong: $error_message";
+            if (is_wp_error($authTokenResponse)) {
+                $error_message = $authTokenResponse->get_error_message();
+                echo "Something went wrong: $error_message";
 
-            return false;
+                return false;
+            } else {
+                $responseBody = json_decode($authTokenResponse['body']);
+                $_SESSION['wscOAuthResponse'] = $responseBody;
+                return $responseBody;
+            }
         } else {
-            $responseBody = json_decode($authTokenRespoinse['body']);
-
-            return $responseBody;
+            return $_SESSION['wscOAuthResponse'];
         }
     }
 
-    private function getApiResponse($url)
-    {
-        $args = array(
-            'headers' => array(),
-            'body' => array('access_token' => '47353b9097ca5d9c93c5a988070804c21e97088c'),
-        );
-        $response = wp_remote_get($url, $args);
-        $jsonDecode2 = json_decode($response['body']);
 
-        return $jsonDecode2;
+    protected function getApiResponse($url, $userId = null)
+    {
+        if ($_SESSION['wscOAuthResponse']->access_token) {
+            $theArgs = array(
+                'body' => array(
+                    'client_id' => $this->clientId,
+                    'client_secret' => $this->clientSecret,
+                    'access_token' => $_SESSION['wscOAuthResponse']->access_token,
+                    'id' => ($userId) ? $userId : null,
+                    'per_page' => 20
+                )
+            );
+            $response = wp_remote_get($url, $theArgs);
+            $jsonDecode2 = json_decode($response['body']);
+
+            return $jsonDecode2;
+        }
+
+        return false;
+    }
+
+    protected function isAuthenticated()
+    {
+        $this->oauthResponse();
+
+        if (isset($_SESSION['wscOAuthResponse']) && $_SESSION['wscOAuthResponse']->message != 'Bad Request') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /*
+     * Todo: use this for later when we want to pass more arguments to "getApiResponse"
+
+    protected function apiRequestParameters($paramValues)
+    {
+        $asdf = $paramValues;
+        return $asdf;
+    }
+    */
+}
+
+class StravaUser extends StravaOAuth
+{
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public function getUserActivity($rideId)
+    {
+        if ($this->isAuthenticated()) {
+            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/'.$rideId);
+
+            return $activityStream;
+        } else {
+            $this->stravaConnectLogin();
+
+            return false;
+        }
     }
 
     public function getUserActivityStream()
     {
-        $response = null;
+        if ($this->isAuthenticated()) {
+            if (!$_SESSION['wscUserActivities']) {
+                $activityStream = $this->getApiResponse($this->apiUrl . '/activities', $_SESSION['wscOAuthResponse']->athlete->id);
+                $_SESSION['wscUserActivities'] = $activityStream;
+            } else {
+                $activityStream = $_SESSION['wscUserActivities'];
+            }
 
-        if (!$_SESSION['wscOAuthResponse']) {
-            $response = $this->oauthResponse();
-            $_SESSION['wscOAuthResponse'] = $response;
+            return $activityStream;
         } else {
-            $response = $_SESSION['wscOAuthResponse'];
+            $this->stravaConnectLogin();
+
+            return false;
         }
-
-        if ($response) {
-            $activityStream = $this->getApiResponse($this->apiUrl . '/activities/?id=' . $response->athlete->id);
-
-            return $activityStream[0];
-        }
-
-        return false;
     }
 
     public function getUserDetails()
     {
         if ($this->isAuthenticated()) {
-            $response = null;
 
-            if (!$_SESSION['wscOAuthResponse']) {
-                $response = $this->oauthResponse();
-                $_SESSION['wscOAuthResponse'] = $response;
+            if (!$_SESSION['wscUserDetails']) {
+                $userDetails = $this->getApiResponse($this->apiUrl . '/athlete', $_SESSION['wscOAuthResponse']->athlete->id);
+                $_SESSION['wscUserDetails'] = $userDetails;
             } else {
-                $response = $_SESSION['wscOAuthResponse'];
+                $userDetails = $_SESSION['wscUserDetails'];
             }
 
-            if ($response) {
-                $activityStream = null;
-
-                if (!$_SESSION['wscUserDetails']) {
-                    $activityStream = $this->getApiResponse($this->apiUrl . '/athlete');
-                    $_SESSION['wscUserDetails'] = $activityStream;
-                } else {
-                    $activityStream = $_SESSION['wscUserDetails'];
-                }
-
-                return $activityStream;
-            }
+            return $userDetails;
         } else {
-            $this->stravaApiLoginButton();
-        }
+            $this->stravaConnectLogin();
 
-        return false;
-    }
-
-    public function isAuthenticated()
-    {
-        if (!isset($_SESSION['wscOAuthResponse']->access_token)) {
             return false;
-        } else {
-            return true;
         }
     }
 
-    public function stravaApiLoginButton()
+    public function stravaConnectLogin()
     {
+        $actual_link = 'http' . (isset($_SERVER['HTTPS']) ? 's' : '') . '://' . "{$_SERVER['HTTP_HOST']}/{$_SERVER['REQUEST_URI']}";
+
         $loginHref = 'https://www.strava.com/oauth/authorize?' .
-            'client_id=8004&' .
-            'response_type=code' .
-            '&redirect_uri=' . $_SERVER['HTTP_REFERER'] .
-            '&scope=write&' .
+            'client_id='.$this->clientId.'&' .
+            'response_type=code&'.
+            'redirect_uri=' . $actual_link .'&'.
+            'scope=write&' .
             'state=loggedInWithWSC&' .
             'approval_prompt=force';
         ?>
@@ -140,6 +177,13 @@ class StravaConnectApi
         <a href="<?php echo $loginHref; ?>">
             <img src="<?php echo plugins_url('/images/LogInWithStrava.png', __FILE__); ?>"/>
         </a>
+    <?php
+    }
+
+    public function stravaConnectLogout()
+    {
+        ?>
+        <a href="https://www.strava.com/oauth/deauthorize">Log out</a>
     <?php
     }
 }

@@ -13,6 +13,22 @@ Author URI: http://wellrootedmedia.com
  */
 include(plugin_dir_path(__FILE__) . 'ApiSetup.php');
 include(plugin_dir_path(__FILE__) . 'StravaApi.php');
+include(plugin_dir_path(__FILE__) . 'wscShortCodes.php');
+include(plugin_dir_path(__FILE__) . 'wscWidget.php');
+add_action('wp_enqueue_scripts', 'wscEnqueueStyleScripts');
+function wscEnqueueStyleScripts()
+{
+    /*
+     * styles
+     * wp_enqueue_style('bootstrap-min-style', get_template_directory_uri() . '/dist/css/bootstrap.min.css');
+     */
+
+    /*
+     * scripts
+     */
+    wp_enqueue_script('jquery-connect', plugins_url('js/jquery.connect.js', __FILE__), array('jquery'), '0.0.1', true);
+    wp_enqueue_script('jquery-connect-tooltip', plugins_url('js/jquery.connect-tooltip.js', __FILE__), array('jquery', 'jquery-ui-tooltip'), '0.0.1', true);
+}
 
 /*
  * Register activation hooks
@@ -42,21 +58,7 @@ function wsc_uninstall()
     // do something
 }
 
-function userDetailsShortcode($atts) {
-    $wscClass = new StravaConnectApi();
-    $userDetails = $wscClass->getUserDetails();
-    //print_r($userDetails);
-    if($userDetails) {
-        echo $userDetails->firstname . ', ' . $userDetails->lastname;
-    }
-}
-add_shortcode('wscUserDetails', 'userDetailsShortcode');
 
-function foobar_func($atts)
-{
-    return "foo and bar";
-}
-add_shortcode('foobar', 'foobar_func');
 
 //add_action('admin_menu', 'register_strava_connect_menu_page');
 //function register_strava_connect_menu_page()
